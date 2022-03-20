@@ -65,13 +65,8 @@ class WG:
                 clusters[0].pop(clusters[0].index(leaders_eff[i][1]))
             # Первый случай, когда важны взаимоотношения в паре с лидером
             if mode == 1:
-                for k in range(1, clusters_number):
-                    # Если стало равным кол-во участников в
-                    # группе и в кластерах
-                    if all([people_group_number == i for i in [len(j) for j in clusters]]):
-                        result = self._uni_clusters(groups_number, clusters)
-                        break
-
+                k = 0
+                while not all([people_group_number == i for i in [len(j) for j in clusters]]):
                     # Если кол-во участников k-го кластера
                     # больше, чем кол-во рабочих групп
                     if len(clusters[k]) > groups_number:
@@ -91,6 +86,8 @@ class WG:
                             clusters[k + 1] += clusters[k][:]
                         else:
                             clusters.append(clusters[k][:])
+                    k += 1
+                result = self._uni_clusters(groups_number, clusters)
             # Второй случай, когда важна общая эффективность группы
             elif mode == 2:
                 # TODO
