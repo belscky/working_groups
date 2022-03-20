@@ -87,7 +87,10 @@ class WG:
                     # Если кол-во участников k-го кластера
                     # меньше, чем кол-во рабочих групп
                     elif len(clusters[k]) < groups_number:
-                        clusters[k + 1] += clusters[k][:]
+                        if clusters[k + 1] is not None:
+                            clusters[k + 1] += clusters[k][:]
+                        else:
+                            clusters.append(clusters[k][:])
             # Второй случай, когда важна общая эффективность группы
             elif mode == 2:
                 # TODO
