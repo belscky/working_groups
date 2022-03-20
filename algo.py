@@ -27,9 +27,8 @@ class WG:
         clusters_number = len(clusters)
         # Если участников кластера столько же
         # сколько и участников группы
-        result = [[] for i in range(groups_number)]
-        for i in range(groups_number):
-            result[i].append(clusters[0][i])
+        result = [[clusters[0][i]] for i in range(groups_number)]
+
         # Для каждого кластера
         for k in range(1, clusters_number):
             # Для каждой группы
@@ -72,8 +71,8 @@ class WG:
             for i in range(len(leaders_eff) - groups_number):
                 clusters[1].append(leaders_eff[i][1])
                 clusters[0].pop(clusters[0].index(leaders_eff[i][1]))
-            # Первый случай, когда важны взаимоотношения в паре с лидером
 
+        # Первый случай, когда важны взаимоотношения в паре с лидером
         if mode == 1:
             k = 1
             # Пока кластеры не унифицируются
@@ -103,9 +102,36 @@ class WG:
             result = self._uni_clusters(groups_number, clusters)
         # Второй случай, когда важна общая эффективность группы
         elif mode == 2:
-            # TODO
-            # определить на каждом шаге максимальную пару i, j
-            pass
+            result = [[clusters[0][i]] for i in range(groups_number)]
+            i = 1
+            while i < len(clusters):
+                while len(clusters[i]) < groups_number:
+                    # соединить первые группы пока не станет больше
+                    clusters[i+1] += clusters[i]
+                    clusters.pop(i)
+
+                Flags = [True] * len(clusters[i])
+                for j in range(len(result)):
+                    mx = 0
+                    ind = -1
+                    for k in range(len(clusters[i])):
+                        if Flags[k]:
+                            effect = self.F(result[j]+[clusters[i][k]])
+                            if mx < effect:
+                                mx = effect
+                                if ind != -1:
+                                    Flags[ind] = True
+                                ind = k
+                                Flags[ind] = False
+                    result[j].append(ind)
+                if len(clusters) == i + 1 and len(clusters) != people_group_number:
+                    clusters.append([])
+                for j in range(len(Flags)):
+                    if Flags[j]:
+                        clusters[i+1].append(clusters[i][j])
+                        # Не удаляю из кластера i, потому что мы к нему больше не вернемся
+
+                i += 1
         return result
 
     # Разбиение на группы
@@ -124,12 +150,14 @@ class WG:
         people_group_number = people_number // groups_number
 
         # Если участников кластера столько же, сколько и участников группы
-        if all([people_group_number == i for i in people_one_cluster]):
+        # Первое условие необязательно!!!!!!!!
+        if (all([groups_number == i for i in [len(j) for j in clusters]])) and people_group_number == len(clusters):
             result = self._uni_clusters(groups_number, clusters)
 
         # Если участников в кластерах разное количество
         elif not all(people_one_cluster[i - 1] == people_one_cluster[i] for i in range(1, clusters_number)):
             # Кол-во кластеров больше или равно количеству рабочих групп
+            # TODO Какое условие???
             if clusters_number >= groups_number:
                 result = self._not_uni_clusters(groups_number, clusters, 1)
             else:
