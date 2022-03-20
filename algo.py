@@ -47,9 +47,13 @@ class WG:
         return result
 
     def _not_uni_clusters(self, groups_number: int, clusters: list, mode: int) -> list:
+        while len(clusters[0]) < groups_number:
+            # соединить первые группы пока не станет больше
+            clusters[1] += clusters[0]
+            clusters.pop(0)
+
         clusters_number = len(clusters)
         people_group_number = sum([len(i) for i in clusters]) // groups_number
-
         if len(clusters[0]) > groups_number:
             # Какие m лидеров наиболее эффективны
             leaders = clusters[0][:]
@@ -63,41 +67,46 @@ class WG:
                     leaders_eff[i] = mx
             leaders_eff = [(leaders_eff[i], leaders[i]) for i in range(len(leaders))]
             leaders_eff.sort()
+            if len(clusters) == 1:
+                clusters.append([])
             for i in range(len(leaders_eff) - groups_number):
                 clusters[1].append(leaders_eff[i][1])
                 clusters[0].pop(clusters[0].index(leaders_eff[i][1]))
             # Первый случай, когда важны взаимоотношения в паре с лидером
-            if mode == 1:
-                k = 1
-                # Пока кластеры не унифицируются
-                while not all([people_group_number == i for i in [len(j) for j in clusters]]):
-                    # Если кол-во участников k-го кластера
-                    # больше, чем кол-во рабочих групп
-                    if len(clusters[k]) > groups_number:
-                        members_eff = [0 for i in range(len(clusters[k]))]
-                        for i in range(len(clusters[0])):
-                            for j in range(len(clusters[k])):
-                                members_eff[j] = self.f(clusters[0][i], clusters[k][j])
-                        members_eff = [(members_eff[i], clusters[k][i]) for i in range(len(clusters[k]))]
-                        members_eff.sort()
-                        for i in range(len(members_eff) - groups_number):
-                            clusters[k + 1].append(members_eff[i][1])
-                            clusters[k].pop(clusters[0].index(members_eff[i][1]))
-                    # Если кол-во участников k-го кластера
-                    # меньше, чем кол-во рабочих групп
-                    elif len(clusters[k]) < groups_number:
-                        if k + 1 <= len(clusters) - 1:
-                            clusters[k + 1] += clusters[k][:]
-                        else:
-                            clusters.append(clusters[k][:])
-                    k += 1
-                result = self._uni_clusters(groups_number, clusters)
-            # Второй случай, когда важна общая эффективность группы
-            elif mode == 2:
-                # TODO
-                # определить на каждом шаге максимальную пару i, j
-                pass
-            return result
+
+        if mode == 1:
+            k = 1
+            # Пока кластеры не унифицируются
+            while not ((all([groups_number == i for i in [len(j) for j in clusters]])) and people_group_number == len(clusters)):
+                # Если кол-во участников k-го кластера
+                # больше, чем кол-во рабочих групп
+                if len(clusters[k]) > groups_number:
+                    members_eff = [0 for i in range(len(clusters[k]))]
+                    for i in range(len(clusters[0])):
+                        for j in range(len(clusters[k])):
+                            members_eff[j] = self.f(clusters[0][i], clusters[k][j])
+                    members_eff = [(members_eff[i], clusters[k][i]) for i in range(len(clusters[k]))]
+                    members_eff.sort()
+                    if len(clusters) == k+1:
+                        clusters.append([])
+                    for i in range(len(members_eff) - groups_number):
+                        clusters[k + 1].append(members_eff[i][1])
+                        clusters[k].pop(clusters[k].index(members_eff[i][1]))
+                # Если кол-во участников k-го кластера
+                # меньше, чем кол-во рабочих групп
+                elif len(clusters[k]) < groups_number:
+                    if k + 1 <= len(clusters) - 1:
+                        clusters[k + 1] += clusters[k][:]
+                    else:
+                        clusters.append(clusters[k][:])
+                k += 1
+            result = self._uni_clusters(groups_number, clusters)
+        # Второй случай, когда важна общая эффективность группы
+        elif mode == 2:
+            # TODO
+            # определить на каждом шаге максимальную пару i, j
+            pass
+        return result
 
     # Разбиение на группы
     def split_groups(self, groups_number: int) -> list:
