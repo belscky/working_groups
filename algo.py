@@ -2,13 +2,13 @@ class WG:
     def __init__(self, file_path: str):
         self.file_function_path = file_path + 'function.txt'
         self.file_clusters_path = file_path + 'clusters.txt'
+        file = open(self.file_function_path, 'r')
+        self.function = [list(map(int, h.split())) for h in file.read().split('\n')]
+        file.close()
 
     # Характеристическая функция для пары людей
     def f(self, i: int, j: int) -> int:
-        file = open(self.file_function_path, 'r')
-        function = [list(map(int, h.split())) for h in file.read().split('\n')]
-        file.close()
-        return function[i][j]
+        return self.function[i][j]
 
     # Характеристическая функция для группы
     def F(self, s: list) -> int:
