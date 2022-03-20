@@ -1,3 +1,4 @@
+import numpy as np
 class WG:
     def __init__(self, file_path: str):
         self.file_function_path = file_path + 'function.txt'
@@ -37,8 +38,9 @@ class WG:
                 mx = 0
                 ind = 0
                 for i in range(len(clusters[k])):
-                    if self.F(result[s] + [clusters[k][i]]) > mx:
-                        mx = self.F(result[s] + [clusters[k][i]])
+                    effect = self.F(result[s] + [clusters[k][i]])
+                    if effect > mx:
+                        mx = effect
                         ind = i
                 result[s].append(clusters[k][ind])
                 clusters[k].pop(ind)
@@ -66,7 +68,7 @@ class WG:
                 clusters[0].pop(clusters[0].index(leaders_eff[i][1]))
             # Первый случай, когда важны взаимоотношения в паре с лидером
             if mode == 1:
-                k = 0
+                k = 1
                 # Пока кластеры не унифицируются
                 while not all([people_group_number == i for i in [len(j) for j in clusters]]):
                     # Если кол-во участников k-го кластера
@@ -124,3 +126,69 @@ class WG:
             else:
                 result = self._not_uni_clusters(groups_number, clusters, 2)
         return result
+
+    def clustering(self):
+        f = open(self.file_function_path)
+        A = []
+        T = []
+        for line in f:
+            targ = list(map(int, line.split()))
+            A.append(targ)
+            T.append(list(map(bool, targ.copy())))
+        A = np.array(A)
+        T = np.array(T)
+
+        # Проверка на правильность
+
+        n = len(A)
+        for i in A:
+            if len(A) != len(i):
+                exit()
+        # Построение транзитивной матрицы
+
+        for k in range(n):
+            for i in range(n):
+                for j in range(n):
+                    T[i][j] = T[i][j] or (T[i][k] and T[k][j])
+
+        # Столбец сумм строк
+
+        S = []
+        Flag = False
+        for i in range(n):
+            if False in T[i]:
+                Flag = True
+            S.append(sum(T[i]))
+
+        if Flag == False:
+            exit(0)
+
+        # Матрица перестановок
+
+        S_sort = sorted(S.copy(), reverse=True)
+        P = [[0] * n for i in range(n)]
+        for i in range(n):
+            P[i][S.index(S_sort[i])] = 1
+            if i != 0 and S_sort[i] == S_sort[i - 1]:
+                P[i][S.index(S_sort[i])] = 0
+                P[i][S.index(S_sort[i], P[i - 1].index(1) + 1)] = 1
+
+        P = np.array(P)
+
+        # Матрица
+
+        #P_t = P.transpose()
+        #Tau = P.dot(T).dot(P_t)
+        #K = P.dot(A).dot(P_t)
+        f = open(self.file_clusters_path, "w")
+        i = 0
+        print(np.where(P[i] == 1)[0][0])
+        f.write(str(np.where(P[i] == 1)[0][0]))
+        i += 1
+        while i != n:
+            if S_sort[i] == S_sort[i - 1]:
+                f.write(" " + str(np.where(P[i] == 1)[0][0]))
+            else:
+                f.write("\n" + str(np.where(P[i] == 1)[0][0]))
+            i += 1
+        f.close()
