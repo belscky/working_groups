@@ -24,7 +24,6 @@ class WG:
 
     def _uni_clusters(self, groups_number: int, clusters: list) -> list:
         clusters_number = len(clusters)
-        people_group_number = sum([len(i) for i in clusters]) // groups_number
         # Если участников кластера столько же
         # сколько и участников группы
         result = [[] for i in range(groups_number)]
