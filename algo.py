@@ -13,6 +13,8 @@ class WG:
     # Характеристическая функция для группы
     def F(self, s: list) -> int:
         k = len(s)
+        if k == 1:
+            return 0
         result = 0
         for i in range(k):
             for j in range(k):
@@ -20,7 +22,7 @@ class WG:
                     result += self.f(s[i], s[j])
         return result
 
-    def _uni_clusters(self, groups_number, clusters) -> list:
+    def _uni_clusters(self, groups_number: int, clusters: list) -> list:
         clusters_number = len(clusters)
         people_group_number = sum([len(i) for i in clusters]) // groups_number
         # Если участников кластера столько же
@@ -28,22 +30,22 @@ class WG:
         result = [[] for i in range(groups_number)]
         for i in range(groups_number):
             result[i].append(clusters[0][i])
-        # Для каждой группы
-        for s in range(groups_number):
-            # Для каждого кластера
-            for i in range(clusters_number):
+        # Для каждого кластера
+        for k in range(1, clusters_number):
+            # Для каждой группы
+            for s in range(groups_number):
                 # Для каждого человека в кластере
                 mx = 0
-                ind = 1
-                for k in range(1, people_group_number):
-                    if self.f(result[s][i - 1], clusters[i][k]) > mx:
-                        mx = self.f(result[s][i - 1], clusters[i][k])
-                        ind = s
-                    if clusters[i][ind] != result[s][i - 1]:
-                        result[s].append(clusters[i][ind])
+                ind = 0
+                for i in range(len(clusters[k])):
+                    if self.F(result[s] + [clusters[k][i]]) > mx:
+                        mx = self.F(result[s] + [clusters[k][i]])
+                        ind = i
+                result[s].append(clusters[k][ind])
+                clusters[k].pop(ind)
         return result
 
-    def _not_uni_clusters(self, groups_number, clusters, mode) -> list:
+    def _not_uni_clusters(self, groups_number: int, clusters: list, mode: int) -> list:
         clusters_number = len(clusters)
         people_group_number = sum([len(i) for i in clusters]) // groups_number
 
@@ -66,6 +68,7 @@ class WG:
             # Первый случай, когда важны взаимоотношения в паре с лидером
             if mode == 1:
                 k = 0
+                # Пока кластеры не унифицируются
                 while not all([people_group_number == i for i in [len(j) for j in clusters]]):
                     # Если кол-во участников k-го кластера
                     # больше, чем кол-во рабочих групп
@@ -82,7 +85,7 @@ class WG:
                     # Если кол-во участников k-го кластера
                     # меньше, чем кол-во рабочих групп
                     elif len(clusters[k]) < groups_number:
-                        if clusters[k + 1] is not None:
+                        if k + 1 <= len(clusters) - 1:
                             clusters[k + 1] += clusters[k][:]
                         else:
                             clusters.append(clusters[k][:])
@@ -96,7 +99,7 @@ class WG:
             return result
 
     # Разбиение на группы
-    def split_groups(self, groups_number) -> list:
+    def split_groups(self, groups_number: int) -> list:
         clusters_file = open(self.file_clusters_path, 'r')
         clusters = clusters_file.read()
         clusters_file.close()
