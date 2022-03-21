@@ -155,12 +155,13 @@ class WG:
         # Если участников кластера столько же, сколько и участников группы
         # на случай неравного количества людей в группе
         group_flag = all([groups_number == i for i in [len(j) for j in clusters]])
+        not_equal = not all(people_one_cluster[i - 1] == people_one_cluster[i] for i in range(1, clusters_number))
         if group_flag and people_group_number == len(clusters):
             print(clusters)
             result = self._uni_clusters(groups_number, clusters)
 
         # Если участников в кластерах разное количество
-        elif not all(people_one_cluster[i - 1] == people_one_cluster[i] for i in range(1, clusters_number)):
+        elif not_equal is True:
             # Кол-во кластеров больше или равно количеству рабочих групп
             # TODO Какое условие???
             if clusters_number >= groups_number:
