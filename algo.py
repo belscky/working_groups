@@ -78,8 +78,8 @@ class WG:
         if mode == 1:
             k = 1
             # Пока кластеры не унифицируются
-            while not ((all([groups_number == i for i in [len(j) for j in clusters]])) and people_group_number == len(
-                    clusters)):
+            while not ((all([groups_number == i for i in [len(clusters[j]) for j in range(len(clusters)-1)]])) and (people_group_number == len(
+                    clusters)-1 or people_group_number == len(clusters))):
                 # Если кол-во участников k-го кластера
                 # больше, чем кол-во рабочих групп
                 if len(clusters[k]) > groups_number:
@@ -94,51 +94,86 @@ class WG:
                     for i in range(len(members_eff) - groups_number):
                         clusters[k + 1].append(members_eff[i][1])
                         clusters[k].pop(clusters[k].index(members_eff[i][1]))
+                    k += 1
                 # Если кол-во участников k-го кластера
                 # меньше, чем кол-во рабочих групп
                 elif len(clusters[k]) < groups_number:
                     if k + 1 <= len(clusters) - 1:
                         clusters[k + 1] += clusters[k][:]
-                    else:
-                        clusters.append(clusters[k][:])
-                k += 1
-            result = self._uni_clusters(groups_number, clusters)
+                        clusters.pop(k)
+            if len(clusters[-1]) == groups_number:
+                result = self._uni_clusters(groups_number, clusters)
+            else:
+                result = self._uni_clusters(groups_number, clusters[:len(clusters)-1])
+                flags_result = [True] * groups_number
+                for i in range(len(clusters[-1])):
+                    mx = 0
+                    ind = -1
+                    for j in range(groups_number):
+                        if flags_result[j]:
+                            effect = self.f_group(result[j]+[clusters[-1][i]])
+                            if mx < effect:
+                                mx = effect
+                                if ind != -1:
+                                    flags_result[ind] = True
+                                ind = j
+                                flags_result[ind] = False
+                    result[ind].append(clusters[-1][i])
+
+
         # Второй случай, когда важна общая эффективность группы
         elif mode == 2:
             result = [[clusters[0][i]] for i in range(groups_number)]
             i = 1
             while i < len(clusters):
-                while len(clusters[i]) < groups_number:
+                while len(clusters[i]) < groups_number and i != len(clusters)-1:
                     # соединить первые группы пока не станет больше
                     clusters[i + 1] += clusters[i]
                     clusters.pop(i)
 
-                flags = [True] * len(clusters[i])
-                for j in range(len(result)):
-                    mx = 0
-                    ind = -1
+                if i == len(clusters) - 1 and len(clusters[i]) < groups_number:
+                    flags = [True] * groups_number
                     for k in range(len(clusters[i])):
-                        if flags[k]:
-                            effect = self.f_group(result[j] + [clusters[i][k]])
-                            if mx < effect:
-                                mx = effect
-                                if ind != -1:
-                                    flags[ind] = True
-                                ind = k
-                                flags[ind] = False
-                    result[j].append(clusters[i][ind])
-                if len(clusters) == i + 1 and len(clusters) != people_group_number:
-                    clusters.append([])
-                for j in range(len(flags)):
-                    if flags[j]:
-                        clusters[i + 1].append(clusters[i][j])
-                        # Не удаляю из кластера i, потому что мы к нему больше не вернемся
+                        mx = 0
+                        ind = -1
+                        for j in range(groups_number):
+                            if flags[j]:
+                                effect = self.f_group(result[j] + [clusters[i][k]])
+                                if mx < effect:
+                                    mx = effect
+                                    if ind != -1:
+                                        flags[ind] = True
+                                    ind = j
+                                    flags[ind] = False
+                        result[ind].append(clusters[i][k])
+                else:
+                    flags = [True] * len(clusters[i])
+                    for j in range(len(result)):
+                        mx = 0
+                        ind = -1
+                        for k in range(len(clusters[i])):
+                            if flags[k]:
+                                effect = self.f_group(result[j] + [clusters[i][k]])
+                                if mx < effect:
+                                    mx = effect
+                                    if ind != -1:
+                                        flags[ind] = True
+                                    ind = k
+                                    flags[ind] = False
+                        result[j].append(clusters[i][ind])
+                if len(clusters[i]) > groups_number:
+                    if len(clusters) == i + 1:
+                        clusters.append([])
+                    for j in range(len(flags)):
+                        if flags[j]:
+                            clusters[i + 1].append(clusters[i][j])
+                            # Не удаляю из кластера i, потому что мы к нему больше не вернемся
 
                 i += 1
         return result
 
     # Разбиение на группы
-    def split_groups(self, groups_number: int) -> list:
+    def split_groups(self, groups_number: int, mode) -> list:
         clusters_file = open(self.file_clusters_path, 'r')
         clusters = clusters_file.read()
         clusters_file.close()
@@ -155,18 +190,14 @@ class WG:
         # Если участников кластера столько же, сколько и участников группы
         # на случай неравного количества людей в группе
         group_flag = all([groups_number == i for i in [len(j) for j in clusters]])
-        not_equal = not all(people_one_cluster[i - 1] == people_one_cluster[i] for i in range(1, clusters_number))
+        # not_equal = not all(people_one_cluster[i - 1] == people_one_cluster[i] for i in range(1, clusters_number))
         if group_flag and people_group_number == len(clusters):
             print(clusters)
+            result = self._uni_clusters(groups_number, clusters)
 
-        # Если участников в кластерах разное количество
-        elif not_equal is True:
+        else:
             # Кол-во кластеров больше или равно количеству рабочих групп
-            # TODO Какое условие???
-            if clusters_number >= groups_number:
-                result = self._not_uni_clusters(groups_number, clusters, 1)
-            else:
-                result = self._not_uni_clusters(groups_number, clusters, 2)
+            result = self._not_uni_clusters(groups_number, clusters, mode)
         return result
 
     def clustering(self):
@@ -228,7 +259,6 @@ class WG:
         # K = P.dot(A).dot(P_t)
         f = open(self.file_clusters_path, "w")
         i = 0
-        print(np.where(p[i] == 1)[0][0])
         f.write(str(np.where(p[i] == 1)[0][0]))
         i += 1
         while i != n:
