@@ -8,4 +8,4 @@ if __name__ == '__main__':
     mode = input()
     if mode == "1":
         new_wg.clustering()
-    print(new_wg.split_groups(2))
+    print(new_wg.split_groups(5))

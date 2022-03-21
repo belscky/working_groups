@@ -126,7 +126,7 @@ class WG:
                                     flags[ind] = True
                                 ind = k
                                 flags[ind] = False
-                    result[j].append(ind)
+                    result[j].append(clusters[i][ind])
                 if len(clusters) == i + 1 and len(clusters) != people_group_number:
                     clusters.append([])
                 for j in range(len(flags)):
@@ -154,11 +154,11 @@ class WG:
 
         # Если участников кластера столько же, сколько и участников группы
         # Первое условие необязательно!!!!!!!!
-        if (all([people_group_number == i for i in people_one_cluster])) and people_group_number == len(clusters):
+        if (all([groups_number == i for i in [len(j) for j in clusters]])) and people_group_number == len(clusters):
             result = self._uni_clusters(groups_number, clusters)
 
         # Если участников в кластерах разное количество
-        else:
+        elif not all(people_one_cluster[i - 1] == people_one_cluster[i] for i in range(1, clusters_number)):
             # Кол-во кластеров больше или равно количеству рабочих групп
             # TODO Какое условие???
             if clusters_number >= groups_number:
@@ -183,23 +183,30 @@ class WG:
         for i in a:
             if len(a) != len(i):
                 exit()
-
-        # Построение транзитивной матрицы
-        for k in range(n):
-            for i in range(n):
-                for j in range(n):
-                    t[i][j] = t[i][j] or (t[i][k] and t[k][j])
-
-        # Столбец сумм строк
-        s = []
         flag = False
-        for i in range(n):
-            if False in t[i]:
-                flag = True
-            s.append(sum(t[i]))
+        while not flag:
+            # Построение транзитивной матрицы
+            for k in range(n):
+                for i in range(n):
+                    for j in range(n):
+                        t[i][j] = t[i][j] or (t[i][k] and t[k][j])
 
-        if not flag:
-            exit(0)
+            # Столбец сумм строк
+            s = []
+
+            for i in range(n):
+                if False in t[i]:
+                    flag = True
+                s.append(sum(t[i]))
+
+            if not flag:
+                t = []
+                for i in range(n):
+                    for j in range(n):
+                        a[i][j] -= 1
+                        if a[i][j] < 0:
+                            a[i][j] = 0
+                    t.append(list(map(bool, a[i])))
 
         # Матрица перестановок
 
