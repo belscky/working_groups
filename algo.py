@@ -1,4 +1,6 @@
 import numpy as np
+
+
 class WG:
     def __init__(self, file_path: str):
         self.file_function_path = file_path + 'function.txt'
@@ -12,7 +14,7 @@ class WG:
         return self.function[i][j]
 
     # Характеристическая функция для группы
-    def F(self, s: list) -> int:
+    def f_group(self, s: list) -> int:
         k = len(s)
         if k == 1:
             return 0
@@ -37,7 +39,7 @@ class WG:
                 mx = 0
                 ind = 0
                 for i in range(len(clusters[k])):
-                    effect = self.F(result[s] + [clusters[k][i]])
+                    effect = self.f_group(result[s] + [clusters[k][i]])
                     if effect > mx:
                         mx = effect
                         ind = i
@@ -76,7 +78,8 @@ class WG:
         if mode == 1:
             k = 1
             # Пока кластеры не унифицируются
-            while not ((all([groups_number == i for i in [len(j) for j in clusters]])) and people_group_number == len(clusters)):
+            while not ((all([groups_number == i for i in [len(j) for j in clusters]])) and people_group_number == len(
+                    clusters)):
                 # Если кол-во участников k-го кластера
                 # больше, чем кол-во рабочих групп
                 if len(clusters[k]) > groups_number:
@@ -86,7 +89,7 @@ class WG:
                             members_eff[j] = self.f(clusters[0][i], clusters[k][j])
                     members_eff = [(members_eff[i], clusters[k][i]) for i in range(len(clusters[k]))]
                     members_eff.sort()
-                    if len(clusters) == k+1:
+                    if len(clusters) == k + 1:
                         clusters.append([])
                     for i in range(len(members_eff) - groups_number):
                         clusters[k + 1].append(members_eff[i][1])
@@ -107,28 +110,28 @@ class WG:
             while i < len(clusters):
                 while len(clusters[i]) < groups_number:
                     # соединить первые группы пока не станет больше
-                    clusters[i+1] += clusters[i]
+                    clusters[i + 1] += clusters[i]
                     clusters.pop(i)
 
-                Flags = [True] * len(clusters[i])
+                flags = [True] * len(clusters[i])
                 for j in range(len(result)):
                     mx = 0
                     ind = -1
                     for k in range(len(clusters[i])):
-                        if Flags[k]:
-                            effect = self.F(result[j]+[clusters[i][k]])
+                        if flags[k]:
+                            effect = self.f_group(result[j] + [clusters[i][k]])
                             if mx < effect:
                                 mx = effect
                                 if ind != -1:
-                                    Flags[ind] = True
+                                    flags[ind] = True
                                 ind = k
-                                Flags[ind] = False
+                                flags[ind] = False
                     result[j].append(ind)
                 if len(clusters) == i + 1 and len(clusters) != people_group_number:
                     clusters.append([])
-                for j in range(len(Flags)):
-                    if Flags[j]:
-                        clusters[i+1].append(clusters[i][j])
+                for j in range(len(flags)):
+                    if flags[j]:
+                        clusters[i + 1].append(clusters[i][j])
                         # Не удаляю из кластера i, потому что мы к нему больше не вернемся
 
                 i += 1
@@ -166,66 +169,63 @@ class WG:
 
     def clustering(self):
         f = open(self.file_function_path)
-        A = []
-        T = []
+        a = []
+        t = []
         for line in f:
-            targ = list(map(int, line.split()))
-            A.append(targ)
-            T.append(list(map(bool, targ.copy())))
-        A = np.array(A)
-        T = np.array(T)
+            target = list(map(int, line.split()))
+            a.append(target)
+            t.append(list(map(bool, target.copy())))
+        a = np.array(a)
+        t = np.array(t)
 
         # Проверка на правильность
-
-        n = len(A)
-        for i in A:
-            if len(A) != len(i):
+        n = len(a)
+        for i in a:
+            if len(a) != len(i):
                 exit()
-        # Построение транзитивной матрицы
 
+        # Построение транзитивной матрицы
         for k in range(n):
             for i in range(n):
                 for j in range(n):
-                    T[i][j] = T[i][j] or (T[i][k] and T[k][j])
+                    t[i][j] = t[i][j] or (t[i][k] and t[k][j])
 
         # Столбец сумм строк
-
-        S = []
-        Flag = False
+        s = []
+        flag = False
         for i in range(n):
-            if False in T[i]:
-                Flag = True
-            S.append(sum(T[i]))
+            if False in t[i]:
+                flag = True
+            s.append(sum(t[i]))
 
-        if Flag == False:
+        if not flag:
             exit(0)
 
         # Матрица перестановок
 
-        S_sort = sorted(S.copy(), reverse=True)
-        P = [[0] * n for i in range(n)]
+        s_sort = sorted(s.copy(), reverse=True)
+        p = [[0] * n for i in range(n)]
         for i in range(n):
-            P[i][S.index(S_sort[i])] = 1
-            if i != 0 and S_sort[i] == S_sort[i - 1]:
-                P[i][S.index(S_sort[i])] = 0
-                P[i][S.index(S_sort[i], P[i - 1].index(1) + 1)] = 1
+            p[i][s.index(s_sort[i])] = 1
+            if i != 0 and s_sort[i] == s_sort[i - 1]:
+                p[i][s.index(s_sort[i])] = 0
+                p[i][s.index(s_sort[i], p[i - 1].index(1) + 1)] = 1
 
-        P = np.array(P)
+        p = np.array(p)
 
         # Матрица
-
-        #P_t = P.transpose()
-        #Tau = P.dot(T).dot(P_t)
-        #K = P.dot(A).dot(P_t)
+        # P_t = P.transpose()
+        # Tau = P.dot(T).dot(P_t)
+        # K = P.dot(A).dot(P_t)
         f = open(self.file_clusters_path, "w")
         i = 0
-        print(np.where(P[i] == 1)[0][0])
-        f.write(str(np.where(P[i] == 1)[0][0]))
+        print(np.where(p[i] == 1)[0][0])
+        f.write(str(np.where(p[i] == 1)[0][0]))
         i += 1
         while i != n:
-            if S_sort[i] == S_sort[i - 1]:
-                f.write(" " + str(np.where(P[i] == 1)[0][0]))
+            if s_sort[i] == s_sort[i - 1]:
+                f.write(" " + str(np.where(p[i] == 1)[0][0]))
             else:
-                f.write("\n" + str(np.where(P[i] == 1)[0][0]))
+                f.write("\n" + str(np.where(p[i] == 1)[0][0]))
             i += 1
         f.close()
