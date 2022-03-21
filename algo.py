@@ -153,8 +153,7 @@ class WG:
         people_group_number = people_number // groups_number
 
         # Если участников кластера столько же, сколько и участников группы
-        # Первое условие необязательно!!!!!!!!
-        if (all([groups_number == i for i in [len(j) for j in clusters]])) and people_group_number == len(clusters):
+        if people_group_number == len(clusters):
             result = self._uni_clusters(groups_number, clusters)
 
         # Если участников в кластерах разное количество
