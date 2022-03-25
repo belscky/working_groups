@@ -13,5 +13,5 @@ if __name__ == '__main__':
     mode_groups = input()
     print("groups_number: ")
     groups_number = input()
-    #print(new_wg.split_groups(groups_number, int(mode_groups)))
-    print(new_wg.split_groups(4, int(mode_groups)))
+    print(new_wg.split_groups(int(groups_number), int(mode_groups)))
+

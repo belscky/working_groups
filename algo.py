@@ -14,7 +14,7 @@ class WG:
         return self.function[i][j]
 
     # Характеристическая функция для группы
-    def f_group(self, s: list) -> int:
+    def f_new_group(self, s: list) -> int:
         k = len(s)
         if k == 1:
             return 0
@@ -24,26 +24,33 @@ class WG:
                 if i != j:
                     result += self.f(s[i], s[j])
         return result
+    def f_group(self, s: list, result, element) -> int:
+        k = len(s)
+        for i in range(k):
+            result += self.f(s[i], element) + self.f(element,s[i])
+        return result
 
     def _uni_clusters(self, groups_number: int, clusters: list) -> list:
         clusters_number = len(clusters)
         # Если участников кластера столько же
         # сколько и участников группы
-        result = [[clusters[0][i]] for i in range(groups_number)]
+        result = [[0, [clusters[0][i]]] for i in range(groups_number)]
 
         # Для каждого кластера
         for k in range(1, clusters_number):
             # Для каждой группы
+            result.sort()
             for s in range(groups_number):
                 # Для каждого человека в кластере
                 mx = 0
                 ind = 0
                 for i in range(len(clusters[k])):
-                    effect = self.f_group(result[s] + [clusters[k][i]])
-                    if effect > mx:
+                    effect = self.f_group(result[s][1], result[s][0], clusters[k][i])
+                    if effect >= mx:
                         mx = effect
                         ind = i
-                result[s].append(clusters[k][ind])
+                result[s][1].append(clusters[k][ind])
+                result[s][0] = mx
                 clusters[k].pop(ind)
         return result
 
@@ -78,8 +85,8 @@ class WG:
         if mode == 1:
             k = 1
             # Пока кластеры не унифицируются
-            while not ((all([groups_number == i for i in [len(clusters[j]) for j in range(len(clusters)-1)]])) and (people_group_number == len(
-                    clusters)-1 or people_group_number == len(clusters))):
+            while not ((all([groups_number == i for i in [len(clusters[j]) for j in range(len(clusters)-1)]]))
+                       and (groups_number >= len(clusters[-1]))):
                 # Если кол-во участников k-го кластера
                 # больше, чем кол-во рабочих групп
                 if len(clusters[k]) > groups_number:
@@ -101,6 +108,8 @@ class WG:
                     if k + 1 <= len(clusters) - 1:
                         clusters[k + 1] += clusters[k][:]
                         clusters.pop(k)
+                else:
+                    k += 1
             if len(clusters[-1]) == groups_number:
                 result = self._uni_clusters(groups_number, clusters)
             else:
@@ -111,26 +120,28 @@ class WG:
                     ind = -1
                     for j in range(groups_number):
                         if flags_result[j]:
-                            effect = self.f_group(result[j]+[clusters[-1][i]])
+                            effect = self.f_new_group(result[j][1]+[clusters[-1][i]])
                             if mx < effect:
                                 mx = effect
                                 if ind != -1:
                                     flags_result[ind] = True
                                 ind = j
                                 flags_result[ind] = False
-                    result[ind].append(clusters[-1][i])
+                    result[ind][1].append(clusters[-1][i])
+                    result[ind][0] = mx
 
 
         # Второй случай, когда важна общая эффективность группы
         elif mode == 2:
-            result = [[clusters[0][i]] for i in range(groups_number)]
+            result = [[0, [clusters[0][i]]] for i in range(groups_number)]
             i = 1
             while i < len(clusters):
                 while len(clusters[i]) < groups_number and i != len(clusters)-1:
                     # соединить первые группы пока не станет больше
                     clusters[i + 1] += clusters[i]
                     clusters.pop(i)
-
+                # Надо ли reserve?
+                result.sort(reverse=False)
                 if i == len(clusters) - 1 and len(clusters[i]) < groups_number:
                     flags = [True] * groups_number
                     for k in range(len(clusters[i])):
@@ -138,29 +149,31 @@ class WG:
                         ind = -1
                         for j in range(groups_number):
                             if flags[j]:
-                                effect = self.f_group(result[j] + [clusters[i][k]])
+                                effect = self.f_group(result[j][1], result[j][0], clusters[i][k])
                                 if mx < effect:
                                     mx = effect
                                     if ind != -1:
                                         flags[ind] = True
                                     ind = j
                                     flags[ind] = False
-                        result[ind].append(clusters[i][k])
+                        result[ind][1].append(clusters[i][k])
+                        result[ind][0] = mx
                 else:
                     flags = [True] * len(clusters[i])
-                    for j in range(len(result)):
+                    for j in range(groups_number):
                         mx = 0
                         ind = -1
                         for k in range(len(clusters[i])):
                             if flags[k]:
-                                effect = self.f_group(result[j] + [clusters[i][k]])
+                                effect = self.f_group(result[j][1], result[j][0], clusters[i][k])
                                 if mx < effect:
                                     mx = effect
                                     if ind != -1:
                                         flags[ind] = True
                                     ind = k
                                     flags[ind] = False
-                        result[j].append(clusters[i][ind])
+                        result[j][1].append(clusters[i][ind])
+                        result[j][0] = mx
                 if len(clusters[i]) > groups_number:
                     if len(clusters) == i + 1:
                         clusters.append([])
