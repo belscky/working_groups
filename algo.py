@@ -24,6 +24,7 @@ class WG:
                 if i != j:
                     result += self.f(s[i], s[j])
         return result
+
     def f_group(self, s: list, result, element) -> int:
         k = len(s)
         for i in range(k):
@@ -129,7 +130,6 @@ class WG:
                                 flags_result[ind] = False
                     result[ind][1].append(clusters[-1][i])
                     result[ind][0] = mx
-
 
         # Второй случай, когда важна общая эффективность группы
         elif mode == 2:
