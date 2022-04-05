@@ -24,7 +24,6 @@ class WG:
                 if i != j:
                     result += self.f(s[i], s[j])
         return result
-
     def f_group(self, s: list, result, element) -> int:
         k = len(s)
         for i in range(k):
@@ -68,12 +67,18 @@ class WG:
             leaders = clusters[0][:]
             leaders_eff = [0 for i in range(len(leaders))]
             for i in range(len(leaders)):
+                mx = 0
                 for k in range(clusters_number):
-                    mx = 0
+                    #TODO
+                    #for j in range(len(clusters[k])):
+                        #if (self.f(clusters[k][j], leaders[i]) + self.f(leaders[i], clusters[k][j]) > mx) and leaders[i] != clusters[k][j]:
+                            #mx = self.f(clusters[k][j], leaders[i]) + self.f(leaders[i], clusters[k][j])
+
                     for j in range(len(clusters[k])):
-                        if self.f(leaders[i], clusters[k][j]) > mx:
-                            mx = self.f(leaders[i], clusters[k][j])
-                    leaders_eff[i] = mx
+                        if (self.f(clusters[k][j], leaders[i]) > mx)  and leaders[i] != clusters[k][j]:
+                            mx = self.f(clusters[k][j], leaders[i])
+
+                leaders_eff[i] = mx
             leaders_eff = [(leaders_eff[i], leaders[i]) for i in range(len(leaders))]
             leaders_eff.sort()
             if len(clusters) == 1:
@@ -130,6 +135,7 @@ class WG:
                                 flags_result[ind] = False
                     result[ind][1].append(clusters[-1][i])
                     result[ind][0] = mx
+
 
         # Второй случай, когда важна общая эффективность группы
         elif mode == 2:
