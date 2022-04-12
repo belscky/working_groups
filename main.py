@@ -13,5 +13,13 @@ if __name__ == '__main__':
     mode_groups = input()
     print("groups_number: ")
     groups_number = input()
-    print(new_wg.split_groups(int(groups_number), int(mode_groups)))
+    families = ["Акишев", "Астахова","Атюнкин","Авраменко",	"Бударов", "Васильев","Вашукова", "Власов", "Гордеев","Гусева","Жемалтдинов","Жестоканов","Жуков","Забелина","Затухин","Зуев","Каминцева","Купцов", "Ларин","Лебедев","Лизина",	"Лобанов","Неклюдов","Никоноров","Перфильев","Пескичев","Петрова","Ращупкин","Тайцель","Федорова","Чабан","Шарашева","Якупов","Салимов","Измайлов"]
+    group = new_wg.split_groups(int(groups_number), int(mode_groups))
+    print(group)
+    for i in group:
+        print(i[0])
+        for j in i[1]:
+            print(families[j])
+
+
 

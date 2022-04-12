@@ -4,6 +4,7 @@ import numpy as np
 class WG:
     def __init__(self, file_path: str):
         self.file_function_path = file_path + 'function.txt'
+        #self.file_function_path = file_path + 'merge_function.txt'
         self.file_clusters_path = file_path + 'clusters.txt'
         file = open(self.file_function_path, 'r')
         self.function = [list(map(int, h.split())) for h in file.read().split('\n')]
@@ -24,7 +25,6 @@ class WG:
                 if i != j:
                     result += self.f(s[i], s[j])
         return result
-
     def f_group(self, s: list, result, element) -> int:
         k = len(s)
         for i in range(k):
@@ -55,25 +55,23 @@ class WG:
                 clusters[k].pop(ind)
         return result
 
-    def _not_uni_clusters(self, groups_number: int, clusters: list, mode: int) -> list:
+    def _not_uni_clusters(self, groups_number: int, clusters: list, mode: int, people_number) -> list:
         while len(clusters[0]) < groups_number:
             # соединить первые группы пока не станет больше
             clusters[1] += clusters[0]
             clusters.pop(0)
 
-        clusters_number = len(clusters)
-        people_group_number = sum([len(i) for i in clusters]) // groups_number
+        #clusters_number = len(clusters)
+        #people_group_number = sum([len(i) for i in clusters]) // groups_number
         if len(clusters[0]) > groups_number:
             # Какие m лидеров наиболее эффективны
             leaders = clusters[0][:]
             leaders_eff = [0 for i in range(len(leaders))]
             for i in range(len(leaders)):
-                for k in range(clusters_number):
-                    mx = 0
-                    for j in range(len(clusters[k])):
-                        if self.f(leaders[i], clusters[k][j]) > mx:
-                            mx = self.f(leaders[i], clusters[k][j])
-                    leaders_eff[i] = mx
+                mx = 0
+                for k in range(people_number):
+                    mx += self.f(k, leaders[i])
+                leaders_eff[i] = mx
             leaders_eff = [(leaders_eff[i], leaders[i]) for i in range(len(leaders))]
             leaders_eff.sort()
             if len(clusters) == 1:
@@ -130,6 +128,7 @@ class WG:
                                 flags_result[ind] = False
                     result[ind][1].append(clusters[-1][i])
                     result[ind][0] = mx
+
 
         # Второй случай, когда важна общая эффективность группы
         elif mode == 2:
@@ -210,7 +209,7 @@ class WG:
 
         else:
             # Кол-во кластеров больше или равно количеству рабочих групп
-            result = self._not_uni_clusters(groups_number, clusters, mode)
+            result = self._not_uni_clusters(groups_number, clusters, mode, people_number)
         return result
 
     def clustering(self):
