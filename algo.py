@@ -2,15 +2,16 @@ import numpy as np
 
 
 class WG:
+
     def __init__(self, file_path: str):
-        self.file_function_path = file_path + 'function.txt'
-        #self.file_function_path = file_path + 'merge_function.txt'
-        self.file_clusters_path = file_path + 'clusters.txt'
-        file = open(self.file_function_path, 'r')
+        file = open(file_path, 'r')
         self.function = [list(map(int, h.split())) for h in file.read().split('\n')]
         file.close()
+        self.length = len(self.function)
+        self.clusters = []
 
     # Характеристическая функция для пары людей
+
     def f(self, i: int, j: int) -> int:
         return self.function[i][j]
 
@@ -25,10 +26,11 @@ class WG:
                 if i != j:
                     result += self.f(s[i], s[j])
         return result
+
     def f_group(self, s: list, result, element) -> int:
         k = len(s)
         for i in range(k):
-            result += self.f(s[i], element) + self.f(element,s[i])
+            result += self.f(s[i], element) + self.f(element, s[i])
         return result
 
     def _uni_clusters(self, groups_number: int, clusters: list) -> list:
@@ -55,18 +57,16 @@ class WG:
                 clusters[k].pop(ind)
         return result
 
-    def _not_uni_clusters(self, groups_number: int, clusters: list, mode: int, people_number) -> list:
+    def _not_uni_clusters(self, groups_number: int, clusters: list, mode: int, people_number, fl: bool) -> list:
         while len(clusters[0]) < groups_number:
             # соединить первые группы пока не станет больше
             clusters[1] += clusters[0]
             clusters.pop(0)
 
-        #clusters_number = len(clusters)
-        #people_group_number = sum([len(i) for i in clusters]) // groups_number
         if len(clusters[0]) > groups_number:
             # Какие m лидеров наиболее эффективны
             leaders = clusters[0][:]
-            leaders_eff = [0 for i in range(len(leaders))]
+            leaders_eff = [0 for _ in range(len(leaders))]
             for i in range(len(leaders)):
                 mx = 0
                 for k in range(people_number):
@@ -89,7 +89,7 @@ class WG:
                 # Если кол-во участников k-го кластера
                 # больше, чем кол-во рабочих групп
                 if len(clusters[k]) > groups_number:
-                    members_eff = [0 for i in range(len(clusters[k]))]
+                    members_eff = [0 for _ in range(len(clusters[k]))]
                     for i in range(len(clusters[0])):
                         for j in range(len(clusters[k])):
                             members_eff[j] = self.f(clusters[0][i], clusters[k][j])
@@ -129,7 +129,6 @@ class WG:
                     result[ind][1].append(clusters[-1][i])
                     result[ind][0] = mx
 
-
         # Второй случай, когда важна общая эффективность группы
         elif mode == 2:
             result = [[0, [clusters[0][i]]] for i in range(groups_number)]
@@ -140,7 +139,7 @@ class WG:
                     clusters[i + 1] += clusters[i]
                     clusters.pop(i)
                 # Надо ли reserve?
-                result.sort(reverse=False)
+                result.sort(reverse=fl)
                 if i == len(clusters) - 1 and len(clusters[i]) < groups_number:
                     flags = [True] * groups_number
                     for k in range(len(clusters[i])):
@@ -185,79 +184,65 @@ class WG:
         return result
 
     # Разбиение на группы
-    def split_groups(self, groups_number: int, mode) -> list:
-        clusters_file = open(self.file_clusters_path, 'r')
-        clusters = clusters_file.read()
-        clusters_file.close()
-        clusters = [list(map(int, i.split())) for i in clusters.split('\n')]
-        # Кол-во кластеров
-        clusters_number = len(clusters)
-        # Кол-во участников в i-1 кластере
-        people_one_cluster = [len(i) for i in clusters]
+    def split_groups(self, groups_number: int, mode: int, fl: bool) -> list:
+
         # Кол-во участников
-        people_number = sum(people_one_cluster)
+        people_number = sum([len(i) for i in self.clusters])
         # Кол-во участников в группе
         people_group_number = people_number // groups_number
 
         # Если участников кластера столько же, сколько и участников группы
         # на случай неравного количества людей в группе
-        group_flag = all([groups_number == i for i in [len(j) for j in clusters]])
+        group_flag = all([groups_number == i for i in [len(j) for j in self.clusters]])
         # not_equal = not all(people_one_cluster[i - 1] == people_one_cluster[i] for i in range(1, clusters_number))
-        if group_flag and people_group_number == len(clusters):
-            print(clusters)
-            result = self._uni_clusters(groups_number, clusters)
+        if group_flag and people_group_number == len(self.clusters):
+            result = self._uni_clusters(groups_number, self.clusters)
 
         else:
             # Кол-во кластеров больше или равно количеству рабочих групп
-            result = self._not_uni_clusters(groups_number, clusters, mode, people_number)
+            result = self._not_uni_clusters(groups_number, self.clusters, mode, people_number, fl)
         return result
 
     def clustering(self):
-        f = open(self.file_function_path)
-        a = []
+        a = self.function
         t = []
-        for line in f:
-            target = list(map(int, line.split()))
-            a.append(target)
-            t.append(list(map(bool, target.copy())))
+        for i in range(self.length):
+            t.append(list(map(int, map(bool, a[i]))))
         a = np.array(a)
         t = np.array(t)
-
         # Проверка на правильность
-        n = len(a)
         for i in a:
             if len(a) != len(i):
                 exit()
         flag = False
         while not flag:
             # Построение транзитивной матрицы
-            for k in range(n):
-                for i in range(n):
-                    for j in range(n):
+            for k in range(self.length):
+                for i in range(self.length):
+                    for j in range(self.length):
                         t[i][j] = t[i][j] or (t[i][k] and t[k][j])
 
             # Столбец сумм строк
             s = []
 
-            for i in range(n):
+            for i in range(self.length):
                 if False in t[i]:
                     flag = True
                 s.append(sum(t[i]))
 
             if not flag:
                 t = []
-                for i in range(n):
-                    for j in range(n):
+                for i in range(self.length):
+                    for j in range(self.length):
                         a[i][j] -= 1
                         if a[i][j] < 0:
                             a[i][j] = 0
                     t.append(list(map(bool, a[i])))
-
         # Матрица перестановок
 
         s_sort = sorted(s.copy(), reverse=True)
-        p = [[0] * n for i in range(n)]
-        for i in range(n):
+        p = [[0] * self.length for _ in range(self.length)]
+        for i in range(self.length):
             p[i][s.index(s_sort[i])] = 1
             if i != 0 and s_sort[i] == s_sort[i - 1]:
                 p[i][s.index(s_sort[i])] = 0
@@ -269,14 +254,12 @@ class WG:
         # P_t = P.transpose()
         # Tau = P.dot(T).dot(P_t)
         # K = P.dot(A).dot(P_t)
-        f = open(self.file_clusters_path, "w")
         i = 0
-        f.write(str(np.where(p[i] == 1)[0][0]))
+        self.clusters.append([np.where(p[i] == 1)[0][0]])
         i += 1
-        while i != n:
+        while i != self.length:
             if s_sort[i] == s_sort[i - 1]:
-                f.write(" " + str(np.where(p[i] == 1)[0][0]))
+                self.clusters[-1].append(np.where(p[i] == 1)[0][0])
             else:
-                f.write("\n" + str(np.where(p[i] == 1)[0][0]))
+                self.clusters.append([np.where(p[i] == 1)[0][0]])
             i += 1
-        f.close()
